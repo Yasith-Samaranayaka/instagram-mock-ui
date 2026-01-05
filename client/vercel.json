@@ -2,11 +2,11 @@
     "rewrites": [
         {
             "source": "/api/:match*",
-            "destination": "https://REPLACE_WITH_YOUR_RENDER_URL/api/:match*"
+            "destination": "https://instagram-mock-backend.onrender.com/api/:match*"
         },
         {
             "source": "/auth/:match*",
-            "destination": "https://REPLACE_WITH_YOUR_RENDER_URL/auth/:match*"
+            "destination": "https://instagram-mock-backend.onrender.com/auth/:match*"
         }
     ]
 }
