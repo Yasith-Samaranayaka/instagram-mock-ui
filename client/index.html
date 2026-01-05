@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instagram Mock UI - Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://apis.google.com/js/api.js" async defer></script>
+</head>
+
+<body>
+    <!-- Header -->
+    <header class="main-header">
+        <div class="header-left">
+            <a href="index.html" class="btn-icon" title="Home" style="margin-right: 12px;">
+                <i class="fas fa-home" style="font-size: 20px;"></i>
+            </a>
+            <h1>Instagram Mock UI</h1>
+        </div>
+        <div class="header-right" id="headerRight">
+            <button class="btn-secondary" id="driveAuthBtn" onclick="handleDriveAuthClick()"
+                style="margin-right: 12px;">
+                <i class="fas fa-cloud"></i> <span id="driveButtonText">Connect to Google Drive</span>
+            </button>
+            <button class="btn-primary" id="newFileBtn" onclick="createNewFile()" disabled aria-disabled="true">
+                <i class="fas fa-plus"></i> New File
+            </button>
+            <!-- User info will be inserted here by renderUserInfo() -->
+        </div>
+    </header>
+
+    <!-- Dashboard Container -->
+    <div class="dashboard-container main-dashboard">
+        <div class="dashboard-header">
+            <h2>Published Feeds</h2>
+            <p class="text-muted" id="feedCount">0 feeds</p>
+        </div>
+
+        <!-- Feed List -->
+        <div id="feedList" class="feed-list">
+            <!-- Feeds will be loaded here -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="empty-state" style="display: none;">
+            <i class="fas fa-folder-open"></i>
+            <h3>No Feeds Yet</h3>
+            <p>Create your first Instagram mock feed to get started</p>
+        </div>
+    </div>
+
+    <!-- Saved Accounts Section -->
+    <div class="dashboard-container secondary-dashboard" style="margin-top: 40px;">
+        <div class="dashboard-header">
+            <h2>Saved Account Information</h2>
+            <p class="text-muted" id="accountCount">0 accounts</p>
+        </div>
+
+        <!-- Accounts Grid -->
+        <div id="accountsList" class="feed-list">
+            <!-- Accounts will be loaded here -->
+        </div>
+
+        <!-- Empty State for Accounts -->
+        <div id="emptyAccountsState" class="empty-state" style="display: none;">
+            <i class="fas fa-user"></i>
+            <h3>No Saved Accounts</h3>
+            <p>Account information will appear here once you create a feed</p>
+        </div>
+    </div>
+
+    <!-- Modal for selecting file type -->
+    <div id="fileTypeModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Select File Type</h3>
+            </div>
+            <div class="modal-body">
+                <p>Choose the type of Instagram mock you want to create:</p>
+                <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 16px;">
+                    <button class="btn-secondary" onclick="selectFileType('grid')"
+                        style="padding: 16px; text-align: left;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <i class="fas fa-th" style="font-size: 24px;"></i>
+                            <div>
+                                <div style="font-weight: 600; margin-bottom: 4px;">Grid (Full Profile)</div>
+                                <div style="font-size: 12px; color: var(--text-secondary);">Create a full Instagram
+                                    profile with multiple posts</div>
+                            </div>
+                        </div>
+                    </button>
+                    <button class="btn-secondary" onclick="selectFileType('single')"
+                        style="padding: 16px; text-align: left;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <i class="fas fa-image" style="font-size: 24px;"></i>
+                            <div>
+                                <div style="font-weight: 600; margin-bottom: 4px;">Single Post</div>
+                                <div style="font-size: 12px; color: var(--text-secondary);">Create a standalone
+                                    Instagram post</div>
+                            </div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeFileTypeModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Modal -->
+    <div id="customModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Modal Title</h3>
+            </div>
+            <div class="modal-body">
+                <p id="modalMessage">Modal message</p>
+                <input type="text" id="modalInput" style="display: none;">
+            </div>
+            <div class="modal-footer">
+                <button id="modalCancel" class="btn-secondary">Cancel</button>
+                <button id="modalOk" class="btn-primary">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Account Edit Modal -->
+    <div id="accountEditModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3>Edit Account Information</h3>
+                <button class="btn-icon" onclick="closeAccountEditModal()"
+                    style="position: absolute; right: 16px; top: 16px;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div style="display: flex; flex-direction: column; gap: 16px;">
+                    <div>
+                        <label
+                            style="display: block; color: var(--text-secondary); font-size: 12px; margin-bottom: 6px;">Preset
+                            Name</label>
+                        <input type="text" id="accountPresetName"
+                            style="width: 100%; padding: 12px; background-color: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-md); color: var(--text-primary); font-family: var(--font-family);">
+                    </div>
+                    <div>
+                        <label
+                            style="display: block; color: var(--text-secondary); font-size: 12px; margin-bottom: 6px;">Username/Profile
+                            Name</label>
+                        <input type="text" id="accountName"
+                            style="width: 100%; padding: 12px; background-color: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-md); color: var(--text-primary); font-family: var(--font-family);">
+                    </div>
+                    <div>
+                        <label
+                            style="display: block; color: var(--text-secondary); font-size: 12px; margin-bottom: 6px;">Profile
+                            Picture URL</label>
+                        <input type="text" id="accountPfp"
+                            style="width: 100%; padding: 12px; background-color: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-md); color: var(--text-primary); font-family: var(--font-family);">
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <div>
+                            <label
+                                style="display: block; color: var(--text-secondary); font-size: 12px; margin-bottom: 6px;">Followers</label>
+                            <input type="text" id="accountFollowers"
+                                style="width: 100%; padding: 12px; background-color: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-md); color: var(--text-primary); font-family: var(--font-family);">
+                        </div>
+                        <div>
+                            <label
+                                style="display: block; color: var(--text-secondary); font-size: 12px; margin-bottom: 6px;">Following</label>
+                            <input type="text" id="accountFollowing"
+                                style="width: 100%; padding: 12px; background-color: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-md); color: var(--text-primary); font-family: var(--font-family);">
+                        </div>
+                    </div>
+                    <div>
+                        <label
+                            style="display: block; color: var(--text-secondary); font-size: 12px; margin-bottom: 6px;">Bio</label>
+                        <textarea id="accountBio"
+                            style="width: 100%; padding: 12px; background-color: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-md); color: var(--text-primary); font-family: var(--font-family); resize: vertical; min-height: 80px;"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeAccountEditModal()">Cancel</button>
+                <button class="btn-primary" onclick="saveAccountChanges()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="auth.js"></script>
+    <script src="auth-client.js"></script>
+    <script src="ui.js"></script>
+    <script>
+        // API_URL is already defined in auth-client.js
+
+        // Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Initialize dashboard
+        async function init() {
+            // Require authentication
+            const user = await requireAuth();
+            if (!user) return; // Will redirect to login
+
+            // Show user info in header
+            renderUserInfo(user);
+
+            // Load dashboard data
+            await loadFeeds();
+            await loadAccounts();
+            updateDriveUiState();
+        }
+
+        // Google Drive Authentication Handler
+        function handleDriveAuthClick() {
+            console.log('🔵 Drive Auth button clicked');
+            if (typeof requestAuth === 'function') {
+                requestAuth();
+            } else {
+                console.error('❌ requestAuth function not found');
+            }
+        }
+
+        // Update Drive UI based on authentication state
+        function updateDriveUiState() {
+            const authBtn = document.getElementById('driveAuthBtn');
+            const buttonText = document.getElementById('driveButtonText');
+            const newFileBtn = document.getElementById('newFileBtn');
+            const authed = typeof isAuthenticated === 'function' && isAuthenticated();
+
+            if (authBtn && buttonText) {
+                if (authed) {
+                    authBtn.classList.remove('btn-secondary');
+                    authBtn.classList.add('btn-primary');
+                    buttonText.textContent = '✓ Google Drive Connected';
+                } else {
+                    authBtn.classList.remove('btn-primary');
+                    authBtn.classList.add('btn-secondary');
+                    buttonText.textContent = 'Connect to Google Drive';
+                }
+            }
+
+            if (newFileBtn) {
+                newFileBtn.disabled = !authed;
+                newFileBtn.setAttribute('aria-disabled', (!authed).toString());
+                newFileBtn.title = authed ? '' : 'Connect to Google Drive to create a new file';
+            }
+        }
+
+        // Listen for authentication changes
+        window.addEventListener('gdrive-auth-success', updateDriveUiState);
+        window.addEventListener('gdrive-auth-logout', updateDriveUiState);
+
+        // Load all feeds
+        async function loadFeeds() {
+            try {
+                const response = await fetch(`${API_URL}/api/feeds`, {
+                    credentials: 'include'
+                });
+                const feeds = await response.json();
+
+                const feedList = document.getElementById('feedList');
+                const emptyState = document.getElementById('emptyState');
+                const feedCount = document.getElementById('feedCount');
+
+                if (feeds.length === 0) {
+                    feedList.style.display = 'none';
+                    emptyState.style.display = 'block';
+                    feedCount.textContent = '0 feeds';
+                    return;
+                }
+
+                feedList.style.display = 'grid';
+                emptyState.style.display = 'none';
+                feedCount.textContent = `${feeds.length} feed${feeds.length !== 1 ? 's' : ''}`;
+
+                // Load approvals for each feed
+                const feedsWithApprovals = await Promise.all(feeds.map(async feed => {
+                    try {
+                        const approvalsResponse = await fetch(`${API_URL}/api/approvals/${feed.id}`);
+                        const approvals = approvalsResponse.ok ? await approvalsResponse.json() : [];
+                        return { ...feed, approvals };
+                    } catch {
+                        return { ...feed, approvals: [] };
+                    }
+                }));
+
+                feedList.innerHTML = feedsWithApprovals.map(feed => {
+                    // Ensure approvals is always an array
+                    const approvals = Array.isArray(feed.approvals) ? feed.approvals : [];
+                    const approvalCount = approvals.length;
+                    const hasApprovals = approvalCount > 0;
+
+                    // Collect all comments (support both old and new approval formats)
+                    let allComments = [];
+                    approvals.forEach(approval => {
+                        // New format: payload.gridComment and payload.posts
+                        if (approval.payload) {
+                            if (approval.payload.gridComment) {
+                                allComments.push({
+                                    text: approval.payload.gridComment,
+                                    email: approval.clientEmail,
+                                    type: 'grid'
+                                });
+                            }
+                            if (approval.payload.posts) {
+                                approval.payload.posts.forEach(post => {
+                                    if (post.comments && post.comments.length > 0) {
+                                        post.comments.forEach(comment => {
+                                            allComments.push({
+                                                text: comment,
+                                                email: approval.clientEmail,
+                                                type: 'post',
+                                                postId: post.postId
+                                            });
+                                        });
+                                    }
+                                });
+                            }
+                        }
+
+                        // Old format: feedback array with type 'comment'
+                        if (approval.feedback) {
+                            approval.feedback.forEach(item => {
+                                if (item.type === 'comment' && item.comment) {
+                                    allComments.push({
+                                        text: item.comment,
+                                        email: approval.clientEmail,
+                                        type: 'post',
+                                        postId: item.postId
+                                    });
+                                }
+                            });
+                        }
+                    });
+
+                    const commentsHtml = hasApprovals ? `
+                        <div class="feed-approvals-section" onclick="event.stopPropagation()">
+                            <div class="feed-approvals-header">
+                                <i class="fas fa-comments"></i>
+                                <span>${approvalCount} client approval${approvalCount !== 1 ? 's' : ''}</span>
+                            </div>
+                            ${allComments.length > 0 ? `
+                                <div class="feed-comments-list">
+                                    ${allComments.slice(0, 3).map(comment => `
+                                        <div class="feed-comment-item">
+                                            <div class="feed-comment-header">
+                                                <span class="feed-comment-email">${escapeHtml(comment.email)}</span>
+                                                <span class="feed-comment-type">${comment.type === 'grid' ? 'Grid' : 'Post'}</span>
+                                            </div>
+                                            <div class="feed-comment-text">${escapeHtml(comment.text)}</div>
+                                        </div>
+                                    `).join('')}
+                                    ${allComments.length > 3 ? `
+                                        <div class="feed-comment-more">
+                                            +${allComments.length - 3} more comment${allComments.length - 3 !== 1 ? 's' : ''}
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            ` : '<p class="text-muted" style="font-size: 12px; margin: 8px 0 0 0;">No comments yet</p>'}
+                        </div>
+                    ` : '';
+
+                    return `
+                        <div class="feed-card" onclick="openFeed('${feed.id}', '${feed.type}')">
+                            <div class="feed-card-header">
+                                <div>
+                                    <h3>${feed.name || 'Untitled Feed'}</h3>
+                                    <p>${feed.type || 'Grid'} • ${new Date(feed.id).toLocaleString()}</p>
+                                </div>
+                                <button class="btn-icon" onclick="deleteFeed('${feed.id}', event)" title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                            <p class="text-muted">
+                                ${feed.state?.posts?.length || 0} post${feed.state?.posts?.length !== 1 ? 's' : ''}
+                            </p>
+                            ${commentsHtml}
+                        </div>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Error loading feeds:', error);
+                await showAlert('Error', 'Failed to load feeds. Make sure the server is running.');
+            }
+        }
+
+        // Load all saved accounts
+        async function loadAccounts() {
+            try {
+                const accountsList = document.getElementById('accountsList');
+                const emptyAccountsState = document.getElementById('emptyAccountsState');
+                const accountCount = document.getElementById('accountCount');
+
+                // Load presets from server
+                const response = await fetch(`${API_URL}/api/presets`);
+                const accounts = await response.json();
+
+                // Also save to localStorage for quick access
+                localStorage.setItem('savedAccounts', JSON.stringify(accounts));
+
+                if (accounts.length === 0) {
+                    accountsList.style.display = 'none';
+                    emptyAccountsState.style.display = 'block';
+                    accountCount.textContent = '0 accounts';
+                    return;
+                }
+
+                accountsList.style.display = 'grid';
+                emptyAccountsState.style.display = 'none';
+                accountCount.textContent = `${accounts.length} account${accounts.length !== 1 ? 's' : ''}`;
+
+                accountsList.innerHTML = accounts.map((account, index) => `
+                    <div class="feed-card" onclick="openAccountEdit(${index})">
+                        <div class="feed-card-header">
+                            <div>
+                                <h3>${account.name || 'Unnamed Preset'}</h3>
+                                <p>${account.data?.name || 'No username'}</p>
+                            </div>
+                            <button class="btn-icon" onclick="deleteAccount(${index}, event)" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                        <div style="display: flex; gap: 20px; color: var(--text-secondary); font-size: 14px;">
+                            <span>${account.data?.followers || '0'} followers</span>
+                            <span>${account.data?.following || '0'} following</span>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading accounts:', error);
+            }
+        }
+
+        // Open account edit modal
+        function openAccountEdit(index) {
+            const accountsJson = localStorage.getItem('savedAccounts');
+            const accounts = accountsJson ? JSON.parse(accountsJson) : [];
+
+            if (index >= 0 && index < accounts.length) {
+                const account = accounts[index];
+
+                // Store the current edit index
+                window.currentAccountEditIndex = index;
+
+                // Populate the form
+                document.getElementById('accountPresetName').value = account.name || '';
+                document.getElementById('accountName').value = account.data?.name || '';
+                document.getElementById('accountPfp').value = account.data?.pfp || '';
+                document.getElementById('accountFollowers').value = account.data?.followers || '';
+                document.getElementById('accountFollowing').value = account.data?.following || '';
+                document.getElementById('accountBio').value = account.data?.bio || '';
+
+                // Show the modal
+                document.getElementById('accountEditModal').style.display = 'flex';
+            }
+        }
+
+        // Close account edit modal
+        function closeAccountEditModal() {
+            document.getElementById('accountEditModal').style.display = 'none';
+            window.currentAccountEditIndex = null;
+        }
+
+        // Save account changes
+        async function saveAccountChanges() {
+            const index = window.currentAccountEditIndex;
+
+            if (index === null || index === undefined) return;
+
+            const accountsJson = localStorage.getItem('savedAccounts');
+            const accounts = accountsJson ? JSON.parse(accountsJson) : [];
+
+            if (index >= 0 && index < accounts.length) {
+                // Update the account
+                accounts[index] = {
+                    name: document.getElementById('accountPresetName').value || 'Unnamed Preset',
+                    data: {
+                        name: document.getElementById('accountName').value,
+                        pfp: document.getElementById('accountPfp').value,
+                        followers: document.getElementById('accountFollowers').value,
+                        following: document.getElementById('accountFollowing').value,
+                        bio: document.getElementById('accountBio').value
+                    }
+                };
+
+                try {
+                    // Save to server
+                    await fetch(`${API_URL}/api/presets`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(accounts)
+                    });
+
+                    // Also save to localStorage
+                    localStorage.setItem('savedAccounts', JSON.stringify(accounts));
+
+                    // Close modal and reload
+                    closeAccountEditModal();
+                    await loadAccounts();
+                    await showAlert('Success', 'Account information updated successfully');
+                } catch (error) {
+                    console.error('Error saving changes:', error);
+                    await showAlert('Error', 'Failed to save changes. Make sure the server is running.');
+                }
+            }
+        }
+
+        // Delete account
+        async function deleteAccount(index, event) {
+            event.stopPropagation();
+
+            const confirmed = await showConfirm('Delete Account', 'Are you sure you want to delete this saved account information? This action cannot be undone.');
+            if (!confirmed) return;
+
+            const accountsJson = localStorage.getItem('savedAccounts');
+            const accounts = accountsJson ? JSON.parse(accountsJson) : [];
+
+            if (index >= 0 && index < accounts.length) {
+                accounts.splice(index, 1);
+
+                try {
+                    // Save to server
+                    await fetch(`${API_URL}/api/presets`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(accounts)
+                    });
+
+                    // Save to localStorage
+                    localStorage.setItem('savedAccounts', JSON.stringify(accounts));
+                    await loadAccounts();
+                    await showAlert('Success', 'Account deleted successfully');
+                } catch (error) {
+                    console.error('Error deleting account:', error);
+                    await showAlert('Error', 'Failed to delete account. Make sure the server is running.');
+                }
+            }
+        }
+
+        // Open feed in appropriate editor
+        function openFeed(id, type) {
+            if (type === 'Single' || type === 'Post') {
+                window.location.href = `single.html?load=${id}`;
+            } else {
+                window.location.href = `grid.html?load=${id}`;
+            }
+        }
+
+        // Delete feed
+        async function deleteFeed(id, event) {
+            event.stopPropagation();
+
+            const confirmed = await showConfirm('Delete Feed', 'Are you sure you want to delete this feed? This action cannot be undone.');
+            if (!confirmed) return;
+
+            try {
+                // First fetch the feed to get cached file paths
+                const feedResponse = await fetch(`${API_URL}/api/feeds/${id}`);
+                const feed = await feedResponse.json();
+
+                // Delete cached files for all posts in the feed
+                if (feed.state && feed.state.posts) {
+                    for (const post of feed.state.posts) {
+                        const pathsToDelete = [];
+                        if (post.cachedPath) pathsToDelete.push(post.cachedPath);
+                        if (post.cachedThumbnail) pathsToDelete.push(post.cachedThumbnail);
+                        if (post.cachedVideoPath) pathsToDelete.push(post.cachedVideoPath);
+                        if (post.cachedImages) pathsToDelete.push(...post.cachedImages);
+
+                        if (pathsToDelete.length > 0) {
+                            try {
+                                await fetch(`${API_URL}/api/cache/delete`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        type: post.type,
+                                        id: post.id,
+                                        paths: pathsToDelete
+                                    })
+                                });
+                            } catch (cacheErr) {
+                                console.error('Failed to delete cache for post:', cacheErr);
+                            }
+                        }
+                    }
+                }
+
+                // Delete account PFP if cached
+                if (feed.state && feed.state.accountInfo && feed.state.accountInfo.cachedPfp) {
+                    try {
+                        await fetch(`${API_URL}/api/cache/delete`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                type: 'profile',
+                                id: feed.id,
+                                paths: [feed.state.accountInfo.cachedPfp]
+                            })
+                        });
+                    } catch (cacheErr) {
+                        console.error('Failed to delete profile picture cache:', cacheErr);
+                    }
+                }
+
+                // Finally, delete the feed
+                const response = await fetch(`${API_URL}/api/feeds/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    await showAlert('Success', 'Feed and associated media deleted successfully');
+                    await loadFeeds();
+                } else {
+                    await showAlert('Error', 'Failed to delete feed');
+                }
+            } catch (error) {
+                console.error('Error deleting feed:', error);
+                await showAlert('Error', 'Failed to delete feed. Make sure the server is running.');
+            }
+        }
+
+        // Create new file
+        function createNewFile() {
+            const authed = typeof isAuthenticated === 'function' && isAuthenticated();
+            if (!authed) {
+                showAlert('Connect to Drive', 'Please connect to Google Drive before creating a new file.');
+                return;
+            }
+            document.getElementById('fileTypeModal').style.display = 'flex';
+        }
+
+        // Select file type
+        function selectFileType(type) {
+            closeFileTypeModal();
+            if (type === 'grid') {
+                window.location.href = 'grid.html';
+            } else if (type === 'single') {
+                window.location.href = 'single.html';
+            }
+        }
+
+        // Close file type modal
+        function closeFileTypeModal() {
+            document.getElementById('fileTypeModal').style.display = 'none';
+        }
+
+        // Setup modal overlay closing
+        document.addEventListener('DOMContentLoaded', () => {
+            const fileTypeModal = document.getElementById('fileTypeModal');
+            const accountEditModal = document.getElementById('accountEditModal');
+
+            if (fileTypeModal) {
+                fileTypeModal.addEventListener('click', (e) => {
+                    if (e.target === fileTypeModal) {
+                        closeFileTypeModal();
+                    }
+                });
+            }
+
+            if (accountEditModal) {
+                accountEditModal.addEventListener('click', (e) => {
+                    if (e.target === accountEditModal) {
+                        closeAccountEditModal();
+                    }
+                });
+            }
+        });
+
+        // Initialize on page load
+        init();
+    </script>
+</body>
+
+</html>

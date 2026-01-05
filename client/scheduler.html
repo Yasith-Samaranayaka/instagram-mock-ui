@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Post Scheduler - Instagram Mock UI</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <!-- Header -->
+    <header class="main-header">
+        <div class="header-left">
+            <h1><i class="fas fa-calendar-alt"></i> Post Scheduler</h1>
+        </div>
+        <div class="header-right">
+            <span id="schedulerEmail" class="text-secondary"></span>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="scheduler-container">
+        <div class="scheduler-header">
+            <div>
+                <h2 id="feedTitle">Loading...</h2>
+                <p class="text-muted" id="postCount">0 posts to schedule</p>
+            </div>
+            <div class="scheduler-stats">
+                <div class="stat-item">
+                    <span class="stat-value" id="scheduledCount">0</span>
+                    <span class="stat-label">Scheduled</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="pendingCount">0</span>
+                    <span class="stat-label">Pending</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Posts List -->
+        <div id="postsList" class="scheduler-posts-list">
+            <!-- Posts will be loaded here -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="empty-state" style="display: none;">
+            <i class="fas fa-calendar-times"></i>
+            <h3>No Posts Found</h3>
+            <p>This scheduler link may be invalid or expired</p>
+        </div>
+    </div>
+
+    <!-- Custom Modal -->
+    <div id="customModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Alert</h3>
+            </div>
+            <div class="modal-body">
+                <p id="modalMessage">Message</p>
+                <input type="text" id="modalInput" style="display: none;">
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="modalCancel" style="display: none;">Cancel</button>
+                <button class="btn-primary" id="modalOk">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+            <div class="loading-spinner"></div>
+            <div class="loading-message" id="loadingMessage">Loading...</div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="ui.js"></script>
+    <script>
+        const API_URL = 'http://localhost:3001';
+        let schedulerData = null;
+        let feedData = null;
+
+        // Convert Google Drive URLs to thumbnail endpoint
+        function convertGoogleDriveUrl(url, isVideo = false) {
+            if (!url) return url;
+
+            // Extract file ID from Google Drive URL
+            let fileId = null;
+            const match = url.match(/[?&/]id=([a-zA-Z0-9_-]+)/);
+            if (match) {
+                fileId = match[1];
+            }
+
+            if (fileId) {
+                if (isVideo) {
+                    return `https://drive.google.com/uc?export=download&id=${fileId}`;
+                }
+                // Use thumbnail endpoint to avoid rate limits
+                return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1600`;
+            }
+
+            return url;
+        }
+
+        // Initialize
+        async function init() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const schedulerId = urlParams.get('id');
+
+            if (!schedulerId) {
+                await showAlert('Error', 'Invalid scheduler link');
+                document.getElementById('emptyState').style.display = 'block';
+                return;
+            }
+
+            await loadScheduler(schedulerId);
+        }
+
+        // Load scheduler data
+        async function loadScheduler(schedulerId) {
+            try {
+                setPageLoading(true, 'Loading schedule...');
+
+                // Load scheduler
+                const schedulerResponse = await fetch(`${API_URL}/api/scheduler/${schedulerId}`);
+                if (!schedulerResponse.ok) {
+                    throw new Error('Scheduler not found');
+                }
+                schedulerData = await schedulerResponse.json();
+
+                // Load feed data using public endpoint (no authentication required)
+                const feedResponse = await fetch(`${API_URL}/api/public/feeds/${schedulerData.feedId}`);
+                if (!feedResponse.ok) {
+                    throw new Error('Feed not found');
+                }
+                feedData = await feedResponse.json();
+
+                // Display data
+                document.getElementById('schedulerEmail').textContent = schedulerData.schedulerEmail;
+                document.getElementById('feedTitle').textContent = feedData.name || 'Untitled Feed';
+
+                renderPosts();
+                updateStats();
+
+                setPageLoading(false);
+            } catch (error) {
+                console.error('Error loading scheduler:', error);
+                setPageLoading(false);
+                await showAlert('Error', error.message || 'Failed to load schedule');
+                document.getElementById('emptyState').style.display = 'block';
+            }
+        }
+
+        // Render posts
+        function renderPosts() {
+            const container = document.getElementById('postsList');
+            const posts = feedData.state?.posts || [];
+
+            if (posts.length === 0) {
+                document.getElementById('emptyState').style.display = 'block';
+                return;
+            }
+
+            document.getElementById('postCount').textContent = `${posts.length} post${posts.length !== 1 ? 's' : ''} to schedule`;
+
+            container.innerHTML = posts.map((post, index) => {
+                const scheduledPost = schedulerData.posts.find(p => p.postId === post.id);
+                const isScheduled = scheduledPost?.scheduled || false;
+                const caption = post.caption || '';
+                const postingDate = post.date || '';
+                const postingTime = post.time || '';
+
+                console.log(`Post ${index + 1} - Caption:`, caption, 'Date:', postingDate, 'Time:', postingTime);
+
+                // Get display media URL (convert to thumbnail endpoint for better rate limit handling)
+                let mediaHTML = '';
+                let downloadUrl = '';
+
+                if (post.type === 'post') {
+                    const displayUrl = post.cachedPath || convertGoogleDriveUrl(post.url);
+                    downloadUrl = post.url;
+                    mediaHTML = `<img src="${displayUrl}" alt="Post ${index + 1}" style="width: 100%; height: auto; display: block;">`;
+                } else if (post.type === 'reel') {
+                    const displayUrl = post.cachedThumbnail || convertGoogleDriveUrl(post.thumbnail);
+                    downloadUrl = post.thumbnail;
+                    mediaHTML = `<video src="${displayUrl}" controls style="width: 100%; height: auto; display: block;"></video>`;
+                } else if (post.type === 'carousel') {
+                    downloadUrl = post.images?.[0] || '';
+                    const images = post.cachedImages || (post.images || []).map(img => convertGoogleDriveUrl(img));
+                    mediaHTML = `
+                        <div class="carousel-container" id="carousel-${post.id}">
+                            <div class="carousel-track">
+                                ${images.map((img, i) => `
+                                    <img src="${img}" alt="Image ${i + 1}" class="carousel-image" style="width: 100%; height: auto; display: none;">
+                                `).join('')}
+                            </div>
+                            ${images.length > 1 ? `
+                                <button class="carousel-nav carousel-prev" onclick="navigateCarousel('${post.id}', -1)">
+                                    <i class="fas fa-chevron-left"></i>
+                                </button>
+                                <button class="carousel-nav carousel-next" onclick="navigateCarousel('${post.id}', 1)">
+                                    <i class="fas fa-chevron-right"></i>
+                                </button>
+                                <div class="carousel-dots">
+                                    ${images.map((_, i) => `<span class="carousel-dot" onclick="goToCarouselSlide('${post.id}', ${i})"></span>`).join('')}
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div class="scheduler-post-card ${isScheduled ? 'scheduled' : ''}">
+                        <div class="scheduler-post-header">
+                            <div class="scheduler-post-number">Post ${index + 1}</div>
+                            <div class="scheduler-post-type">${post.type}</div>
+                        </div>
+                        
+                        <div class="scheduler-post-content">
+                            <div class="scheduler-post-media">
+                                ${mediaHTML}
+                                <button class="download-btn" onclick="downloadMedia('${downloadUrl}', 'post-${index + 1}')" title="Download High-Res">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                            </div>
+                            
+                            <div class="scheduler-post-details">
+                                <div class="scheduler-info-display">
+                                    <label>Caption</label>
+                                    <p>${caption || '(No caption)'}</p>
+                                </div>
+                                
+                                ${postingDate || postingTime ? `
+                                    <div class="scheduler-info-display">
+                                        <label>Posting Date</label>
+                                        <p>${postingDate ? new Date(postingDate).toLocaleDateString() : ''} ${postingTime || ''}</p>
+                                    </div>
+                                ` : ''}
+                                
+                                <div class="scheduler-post-actions">
+                                    <button class="btn-primary ${isScheduled ? 'btn-scheduled' : ''}" 
+                                        onclick="toggleScheduled('${post.id}')" 
+                                        id="btn-${post.id}">
+                                        <i class="fas ${isScheduled ? 'fa-check-circle' : 'fa-calendar-check'}"></i>
+                                        ${isScheduled ? 'Scheduled' : 'Mark as Scheduled'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Initialize carousels after rendering
+            setTimeout(() => {
+                posts.forEach((post, index) => {
+                    if (post.type === 'carousel') {
+                        initCarousel(post.id);
+                    }
+                });
+            }, 0);
+        }
+
+        // Carousel navigation
+        const carouselStates = {};
+
+        function initCarousel(postId) {
+            const container = document.getElementById(`carousel-${postId}`);
+            if (!container) return;
+
+            const images = container.querySelectorAll('.carousel-image');
+            const dots = container.querySelectorAll('.carousel-dot');
+
+            if (images.length === 0) return;
+
+            carouselStates[postId] = { currentIndex: 0, totalImages: images.length };
+
+            // Show first image
+            images[0].style.display = 'block';
+            if (dots.length > 0) dots[0].classList.add('active');
+        }
+
+        function navigateCarousel(postId, direction) {
+            const state = carouselStates[postId];
+            if (!state) return;
+
+            const container = document.getElementById(`carousel-${postId}`);
+            const images = container.querySelectorAll('.carousel-image');
+            const dots = container.querySelectorAll('.carousel-dot');
+
+            // Hide current image
+            images[state.currentIndex].style.display = 'none';
+            if (dots.length > 0) dots[state.currentIndex].classList.remove('active');
+
+            // Calculate new index
+            state.currentIndex = (state.currentIndex + direction + state.totalImages) % state.totalImages;
+
+            // Show new image
+            images[state.currentIndex].style.display = 'block';
+            if (dots.length > 0) dots[state.currentIndex].classList.add('active');
+        }
+
+        function goToCarouselSlide(postId, index) {
+            const state = carouselStates[postId];
+            if (!state) return;
+
+            const container = document.getElementById(`carousel-${postId}`);
+            const images = container.querySelectorAll('.carousel-image');
+            const dots = container.querySelectorAll('.carousel-dot');
+
+            // Hide current image
+            images[state.currentIndex].style.display = 'none';
+            if (dots.length > 0) dots[state.currentIndex].classList.remove('active');
+
+            // Update index
+            state.currentIndex = index;
+
+            // Show new image
+            images[state.currentIndex].style.display = 'block';
+            if (dots.length > 0) dots[state.currentIndex].classList.add('active');
+        }
+
+        // Toggle scheduled status
+        async function toggleScheduled(postId) {
+            const button = document.getElementById(`btn-${postId}`);
+            const card = button.closest('.scheduler-post-card');
+            const currentlyScheduled = card.classList.contains('scheduled');
+            const newScheduled = !currentlyScheduled;
+
+            try {
+                setPageLoading(true, 'Updating...');
+
+                const response = await fetch(`${API_URL}/api/scheduler/${schedulerData.schedulerId}/post/${postId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ scheduled: newScheduled })
+                });
+
+                if (!response.ok) throw new Error('Failed to update');
+
+                schedulerData = await response.json();
+                updateStats();
+
+                // Update card appearance
+                if (newScheduled) {
+                    card.classList.add('scheduled');
+                    button.innerHTML = '<i class="fas fa-check-circle"></i> Scheduled';
+                    button.classList.add('btn-scheduled');
+                } else {
+                    card.classList.remove('scheduled');
+                    button.innerHTML = '<i class="fas fa-calendar-check"></i> Mark as Scheduled';
+                    button.classList.remove('btn-scheduled');
+                }
+
+                setPageLoading(false);
+            } catch (error) {
+                console.error('Error toggling scheduled:', error);
+                setPageLoading(false);
+                await showAlert('Error', 'Failed to update schedule status');
+            }
+        }
+
+        // Update stats
+        function updateStats() {
+            const total = feedData.state?.posts?.length || 0;
+            const scheduled = schedulerData.posts.filter(p => p.scheduled).length;
+            const pending = total - scheduled;
+
+            document.getElementById('scheduledCount').textContent = scheduled;
+            document.getElementById('pendingCount').textContent = pending;
+        }
+
+        // Download media
+        async function downloadMedia(url, filename) {
+            try {
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = filename;
+                link.target = '_blank';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } catch (error) {
+                console.error('Error downloading:', error);
+                await showAlert('Error', 'Failed to download media');
+            }
+        }
+
+        // Initialize on load
+        init();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,12 @@
+{
+    "rewrites": [
+        {
+            "source": "/api/:match*",
+            "destination": "https://REPLACE_WITH_YOUR_RENDER_URL/api/:match*"
+        },
+        {
+            "source": "/auth/:match*",
+            "destination": "https://REPLACE_WITH_YOUR_RENDER_URL/auth/:match*"
+        }
+    ]
+}

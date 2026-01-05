@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instagram Mock - View</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
+</head>
+<body>
+    <!-- Client Container -->
+    <div class="client-container">
+        <div class="client-instagram-mock instagram-mock">
+            <!-- Profile Header -->
+            <div class="mock-header">
+                <img id="clientPfp" class="mock-pfp" src="https://via.placeholder.com/80" alt="Profile">
+                <div class="mock-info">
+                    <div class="mock-username" id="clientUsername">username</div>
+                    <div class="mock-stats">
+                        <div class="mock-stat">
+                            <span id="clientPosts">0</span> posts
+                        </div>
+                        <div class="mock-stat">
+                            <span id="clientFollowers">0</span> followers
+                        </div>
+                        <div class="mock-stat">
+                            <span id="clientFollowing">0</span> following
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="mock-actions">
+                <button class="btn-secondary">Following</button>
+                <button class="btn-secondary">Message</button>
+            </div>
+
+            <!-- Bio -->
+            <div class="mock-bio" id="clientBio">
+                Loading...
+            </div>
+
+            <!-- Tabs -->
+            <div class="mock-tabs">
+                <div class="mock-tab active" data-tab="grid">
+                    <i class="fas fa-th"></i>
+                </div>
+                <div class="mock-tab" data-tab="reels">
+                    <i class="fas fa-play"></i>
+                </div>
+                <div class="mock-tab disabled" data-tab="tagged">
+                    <i class="fas fa-user-tag"></i>
+                </div>
+            </div>
+
+            <!-- Grid -->
+            <div id="clientGrid" class="mock-grid">
+                <!-- Grid items will be rendered here -->
+            </div>
+
+            <!-- Post Wall -->
+            <div id="postWall" class="wall-view">
+                <div class="wall-header">
+                    <h2>Posts</h2>
+                    <button class="btn-icon" onclick="closeWall()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div id="wallFeed" class="wall-feed">
+                    <!-- Posts will be rendered here -->
+                </div>
+            </div>
+
+            <!-- Post Modal -->
+            <div id="postModal" class="post-modal">
+                <button class="post-modal-close" onclick="closePostModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+                <div class="post-modal-content" id="postModalContent">
+                    <!-- Modal content will be rendered here -->
+                </div>
+            </div>
+
+            <!-- Reel Wall -->
+            <div id="reelWall" class="reel-wall">
+                <button class="reel-close-btn" onclick="closeReelWall()">
+                    <i class="fas fa-times"></i>
+                </button>
+                <div id="reelFeed">
+                    <!-- Reels will be rendered here -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Send Feedback Button (Fixed Position) -->
+        <button class="send-feedback-btn" id="sendFeedbackBtn" onclick="openReviewPanel()" style="display: none;">
+            <i class="fas fa-paper-plane"></i> Review & Send
+        </button>
+    </div>
+    </div>
+
+    <!-- Email Capture Modal -->
+    <div id="emailModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h3>Welcome!</h3>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 16px;">Please enter your email to view and provide feedback on this content:</p>
+                <input type="email" id="clientEmailInput" placeholder="your@email.com" 
+                    style="width: 100%; padding: 12px; background-color: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-md); color: var(--text-primary); font-family: var(--font-family); margin-bottom: 8px;">
+                <p id="emailError" style="color: #ff4444; font-size: 12px; display: none; margin-top: 4px;"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-primary" onclick="submitEmail()" style="width: 100%;">Continue</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Review Panel Modal -->
+    <div id="reviewPanel" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 600px; max-height: 80vh; overflow-y: auto;">
+            <div class="modal-header">
+                <h3>Review Your Feedback</h3>
+                <button class="btn-icon" onclick="closeReviewPanel()" style="position: absolute; right: 16px; top: 16px;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="reviewPanelContent">
+                <!-- Review content will be rendered here -->
+            </div>
+            <div class="modal-footer" style="display: flex; gap: 12px;">
+                <button class="btn-secondary" onclick="closeReviewPanel()" style="flex: 1;">Back</button>
+                <button class="btn-primary" onclick="submitApproval()" style="flex: 1;">
+                    <i class="fas fa-paper-plane"></i> Send Feedback
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Post Comment Modal -->
+    <div id="commentModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3>Add Comment</h3>
+                <button class="btn-icon" onclick="closeCommentModal()" style="position: absolute; right: 16px; top: 16px;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <textarea id="commentInput" placeholder="Enter your feedback..." 
+                    style="width: 100%; min-height: 100px; padding: 12px; background-color: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-md); color: var(--text-primary); font-family: var(--font-family); resize: vertical;"></textarea>
+                <div id="existingComments" style="margin-top: 16px;">
+                    <!-- Existing comments will be rendered here -->
+                </div>
+            </div>
+            <div class="modal-footer" style="display: flex; gap: 12px;">
+                <button class="btn-secondary" onclick="closeCommentModal()" style="flex: 1;">Cancel</button>
+                <button class="btn-primary" onclick="addComment()" style="flex: 1;">Add Comment</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grid Comment Modal -->
+    <div id="gridCommentModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3>Overall Feedback</h3>
+                <button class="btn-icon" onclick="closeGridCommentModal()" style="position: absolute; right: 16px; top: 16px;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <textarea id="gridCommentInput" placeholder="Enter your overall feedback for this profile..." 
+                    style="width: 100%; min-height: 120px; padding: 12px; background-color: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-md); color: var(--text-primary); font-family: var(--font-family); resize: vertical;"></textarea>
+            </div>
+            <div class="modal-footer" style="display: flex; gap: 12px;">
+                <button class="btn-secondary" onclick="closeGridCommentModal()" style="flex: 1;">Cancel</button>
+                <button class="btn-primary" onclick="saveGridComment()" style="flex: 1;">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="successModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 400px; text-align: center;">
+            <div class="modal-body" style="padding: 40px 20px;">
+                <div style="font-size: 64px; color: #4CAF50; margin-bottom: 20px;">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <h3 style="margin-bottom: 12px;">Feedback Sent!</h3>
+                <p style="color: var(--text-secondary);">Thank you for your feedback. The content creator will review your comments shortly.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-primary" onclick="closeSuccessModal()" style="width: 100%;">Close</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Grid Feedback Button (Floating Position) -->
+    <button class="grid-feedback-btn" onclick="openGridCommentModal()" title="Add overall feedback">
+        <i class="fas fa-comment-alt"></i>
+    </button>
+
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+    <script src="client.js"></script>
+</body>
+</html>

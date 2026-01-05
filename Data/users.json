@@ -1,0 +1,31 @@
+{
+  "users": [
+    {
+      "id": "google_106018206788081594275",
+      "googleId": "106018206788081594275",
+      "email": "janith@apollodigital.global",
+      "name": "Janith Heenatigala",
+      "picture": "https://lh3.googleusercontent.com/a/ACg8ocJ1rpipY3Itq82dREgoRBD6d-S22J73KV6WR9HV-N-AakwaJA=s96-c",
+      "createdAt": "2026-01-01T15:42:56.231Z",
+      "lastLogin": "2026-01-05T05:54:56.294Z"
+    },
+    {
+      "id": "google_101710480440536706705",
+      "googleId": "101710480440536706705",
+      "email": "clients@apollodigital.global",
+      "name": "Clients Apollo",
+      "picture": "https://lh3.googleusercontent.com/a/ACg8ocI4NEwvYFEAfK3kjGGKYRwvXzSppX7eNiKQWrT2kZPXgd5ZMw=s96-c",
+      "createdAt": "2026-01-01T16:05:58.442Z",
+      "lastLogin": "2026-01-05T05:57:23.264Z"
+    },
+    {
+      "id": "google_100870534174192942159",
+      "googleId": "100870534174192942159",
+      "email": "webdev@apollodigital.global",
+      "name": "Web Dev",
+      "picture": "https://lh3.googleusercontent.com/a/ACg8ocIToR_s1s8Bc2rKiDzIpDZR1SKwlrCMt_gqDDVeTG0-t7xq9A=s96-c",
+      "createdAt": "2026-01-05T09:38:31.700Z",
+      "lastLogin": "2026-01-05T09:38:31.700Z"
+    }
+  ]
+}

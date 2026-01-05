@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Single Post Editor - Instagram Mock UI</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://apis.google.com/js/api.js" async defer></script>
+</head>
+
+<body>
+    <!-- Header -->
+    <header class="main-header">
+        <div class="header-left">
+            <a href="index.html" class="btn-icon" title="Home" style="margin-right: 12px;">
+                <i class="fas fa-home" style="font-size: 20px;"></i>
+            </a>
+            <h1>Single Post Editor</h1>
+        </div>
+        <div class="header-right">
+            <button class="btn-primary" onclick="publishPost()" style="margin-left: 16px;">
+                <i class="fas fa-upload"></i> Publish
+            </button>
+        </div>
+    </header>
+
+    <!-- Editor Layout -->
+    <div class="editor-container">
+        <!-- Left Panel - Post Editor -->
+        <div class="editor-panel left-panel">
+            <!-- Account Information -->
+            <div class="panel-section">
+                <h3>Account Information</h3>
+                <div class="form-group">
+                    <label for="presetSelect">Load Saved Account (Optional)</label>
+                    <select id="presetSelect" onchange="loadPreset()">
+                        <option value="">Select a saved account...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="accountName">Account Name</label>
+                    <input type="text" id="accountName" placeholder="username" onchange="updatePreview()">
+                </div>
+                <div class="form-group">
+                    <label for="accountPfp">Profile Picture</label>
+                    <div class="upload-row" style="justify-content: space-between; gap: 12px;">
+                        <button class="btn-secondary btn-small" onclick="uploadAccountPfp()">
+                            <i class="fas fa-upload"></i> Upload
+                        </button>
+                        <span class="upload-status-tag" id="accountPfpStatus">No file</span>
+                    </div>
+                </div>
+                <button class="btn-primary" onclick="updatePreview()" style="width: 100%; margin-top: 16px;">
+                    <i class="fas fa-sync"></i> Update Preview
+                </button>
+            </div>
+
+            <!-- Post Type -->
+            <div class="panel-section">
+                <h3>Post Type</h3>
+                <div class="form-group">
+                    <label for="postType">Type</label>
+                    <select id="postType" onchange="changePostType()">
+                        <option value="post">Post</option>
+                        <option value="reel">Reel</option>
+                        <option value="carousel">Carousel</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Post Content -->
+            <div class="panel-section">
+                <h3>Post Content</h3>
+
+                <!-- Post Photo -->
+                <div id="postPhotoSection">
+                    <div class="form-group">
+                        <label>Photo</label>
+                        <div class="upload-row" style="justify-content: space-between; gap: 12px;">
+                            <button class="btn-secondary btn-small" onclick="uploadPostPhoto()">
+                                <i class="fas fa-upload"></i> Upload Photo
+                            </button>
+                            <span class="upload-status-tag" id="postPhotoStatus">No file</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reel Content -->
+                <div id="reelSection" style="display: none;">
+                    <div class="form-group">
+                        <label>Video</label>
+                        <div class="upload-row" style="justify-content: space-between; gap: 12px;">
+                            <button class="btn-secondary btn-small" onclick="uploadReelVideo()">
+                                <i class="fas fa-upload"></i> Upload Video
+                            </button>
+                            <span class="upload-status-tag" id="reelVideoStatus">No file</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Thumbnail</label>
+                        <div class="upload-row" style="justify-content: space-between; gap: 12px;">
+                            <button class="btn-secondary btn-small" onclick="uploadReelThumbnail()">
+                                <i class="fas fa-upload"></i> Upload Thumbnail
+                            </button>
+                            <span class="upload-status-tag" id="reelThumbnailStatus">No file</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Carousel Content -->
+                <div id="carouselSection" style="display: none;">
+                    <div class="form-group">
+                        <label>Carousel Images</label>
+                        <div id="carouselImagesList"></div>
+                        <button class="btn-secondary btn-small" onclick="uploadCarouselImages()"
+                            style="width: 100%; margin-top: 8px;">
+                            <i class="fas fa-upload"></i> Upload Images
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Caption -->
+                <div class="form-group">
+                    <label for="postCaption">Caption</label>
+                    <textarea id="postCaption" placeholder="Write a caption..." onchange="updatePreview()"></textarea>
+                </div>
+
+                <!-- Date and Time -->
+                <div class="form-group">
+                    <label for="postDate">Date</label>
+                    <input type="date" id="postDate" onchange="updatePreview()">
+                </div>
+                <div class="form-group">
+                    <label for="postTime">Time</label>
+                    <input type="time" id="postTime" onchange="updatePreview()">
+                </div>
+                <button class="btn-primary" onclick="updatePreview()" style="width: 100%; margin-top: 16px;">
+                    <i class="fas fa-sync"></i> Update Preview
+                </button>
+            </div>
+        </div>
+
+        <!-- Middle Panel - Preview -->
+        <div class="middle-panel">
+            <div class="instagram-mock">
+                <!-- Post Preview -->
+                <div
+                    style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden; max-width: 468px; margin: 0 auto;">
+                    <!-- Profile Header -->
+                    <div style="padding: 5px; display: flex; gap: 10px; align-items: center;">
+                        <img id="previewPfp"
+                            src="data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2248%22%20height%3D%2248%22%3E%3Crect%20fill%3D%22%23e5e5e5%22%20width%3D%2248%22%20height%3D%2248%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2255%25%22%20dominant-baseline%3D%22middle%22%20text-anchor%3D%22middle%22%20fill%3D%22%23999%22%20font-family%3D%22sans-serif%22%20font-size%3D%2211%22%3EProfile%3C%2Ftext%3E%3C%2Fsvg%3E"
+                            alt="Profile" style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover;">
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600;" id="previewUsername">username</div>
+                        </div>
+                    </div>
+
+                    <!-- Post Image/Video -->
+                    <div id="previewMediaContainer">
+                        <img id="previewMedia"
+                            src="data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22400%22%20height%3D%22500%22%3E%3Crect%20fill%3D%22%23f0f0f0%22%20width%3D%22400%22%20height%3D%22500%22%2F%3E%3Ctext%20fill%3D%22%23999%22%20x%3D%2250%25%22%20y%3D%2250%25%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20font-family%3D%22sans-serif%22%20font-size%3D%2218%22%3ENo%20Media%3C%2Ftext%3E%3C%2Fsvg%3E"
+                            alt="Post" style="width: 100%; aspect-ratio: 4/5; object-fit: cover; display: block;">
+                    </div>
+
+                    <!-- Post Actions -->
+                    <div style="padding: 12px; display: flex; gap: 12px; border-bottom: 1px solid var(--border-color);">
+                        <button
+                            style="background: none; border: none; color: var(--text-primary); cursor: pointer; font-size: 20px;">
+                            <i class="far fa-heart"></i>
+                        </button>
+                        <button
+                            style="background: none; border: none; color: var(--text-primary); cursor: pointer; font-size: 20px;">
+                            <i class="far fa-comment"></i>
+                        </button>
+                        <button style="display: none;">
+                            <i class="far fa-paper-plane"></i>
+                        </button>
+                    </div>
+
+                    <!-- Caption -->
+                    <div style="padding: 12px;">
+                        <div style="font-size: 14px; margin-bottom: 8px;" id="previewCaption"></div>
+                        <div style="font-size: 12px; color: var(--text-muted);" id="previewDate">Today</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Share Modal -->
+    <div id="shareModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Post Published Successfully!</h3>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 12px;">Your post has been published. Share the link below:</p>
+                <input type="text" id="shareLink" readonly style="margin-bottom: 16px;">
+                <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                    <button class="btn-primary" onclick="copyLink()" style="flex: 1;">
+                        <i class="fas fa-copy"></i> Copy
+                    </button>
+                    <button class="btn-primary" onclick="shareWhatsApp()" style="flex: 1;">
+                        <i class="fab fa-whatsapp"></i> WhatsApp
+                    </button>
+                    <button class="btn-primary" onclick="shareEmail()" style="flex: 1;">
+                        <i class="fas fa-envelope"></i> Email
+                    </button>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn-secondary" onclick="openShareLink(false)" style="flex: 1;">
+                        <i class="fas fa-external-link-alt"></i> Open
+                    </button>
+                    <button class="btn-secondary" onclick="openShareLink(true)" style="flex: 1;">
+                        <i class="fas fa-external-link-square-alt"></i> Open in New Tab
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeShareModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Modal -->
+    <div id="customModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Modal Title</h3>
+            </div>
+            <div class="modal-body">
+                <p id="modalMessage">Modal message</p>
+                <input type="text" id="modalInput" style="display: none;">
+            </div>
+            <div class="modal-footer">
+                <button id="modalCancel" class="btn-secondary">Cancel</button>
+                <button id="modalOk" class="btn-primary">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay" role="status" aria-live="polite">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+            <div class="loading-spinner"></div>
+            <div class="loading-message" id="loadingMessage">Uploading...</div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="auth.js"></script>
+    <script src="drive-upload.js"></script>
+    <script src="ui.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+    <script>
+        // Single Post Editor - Simplified Version
+        const API_URL = 'http://localhost:3001';
+        const PFP_PLACEHOLDER = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2248%22%20height%3D%2248%22%3E%3Crect%20fill%3D%22%23e5e5e5%22%20width%3D%2248%22%20height%3D%2248%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2255%25%22%20dominant-baseline%3D%22middle%22%20text-anchor%3D%22middle%22%20fill%3D%22%23999%22%20font-family%3D%22sans-serif%22%20font-size%3D%2211%22%3EProfile%3C%2Ftext%3E%3C%2Fsvg%3E';
+        const MEDIA_PLACEHOLDER = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22400%22%20height%3D%22500%22%3E%3Crect%20fill%3D%22%23f0f0f0%22%20width%3D%22400%22%20height%3D%22500%22%2F%3E%3Ctext%20fill%3D%22%23999%22%20x%3D%2250%25%22%20y%3D%2250%25%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20font-family%3D%22sans-serif%22%20font-size%3D%2218%22%3ENo%20Media%3C%2Ftext%3E%3C%2Fsvg%3E';
+
+        // State
+        const singleState = {
+            accountInfo: {
+                name: '',
+                pfp: '',
+                cachedPfp: ''
+            },
+            post: {
+                type: 'post',
+                caption: '',
+                date: '',
+                time: '',
+                url: '',
+                cachedPath: '',
+                videoUrl: '',
+                thumbnail: '',
+                cachedThumbnail: '',
+                images: [],
+                cachedImages: []
+            }
+        };
+
+        // Initialize
+        function init() {
+            const now = new Date();
+            document.getElementById('postDate').value = now.toISOString().split('T')[0];
+            document.getElementById('postTime').value = now.toTimeString().split(' ')[0].substring(0, 5);
+            loadPresetsDropdown();
+            updatePreview();
+        }
+
+        // Load presets dropdown
+        async function loadPresetsDropdown() {
+            try {
+                const response = await fetch(`${API_URL}/api/presets`);
+                const presets = await response.json();
+
+                const select = document.getElementById('presetSelect');
+                presets.forEach((preset, index) => {
+                    const option = document.createElement('option');
+                    option.value = index;
+                    option.textContent = preset.name;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading presets:', error);
+            }
+        }
+
+        // Load preset
+        async function loadPreset() {
+            const select = document.getElementById('presetSelect');
+            const index = select.value;
+
+            if (index === '') return;
+
+            try {
+                const response = await fetch(`${API_URL}/api/presets`);
+                const presets = await response.json();
+                const preset = presets[parseInt(index)];
+
+                if (preset && preset.data) {
+                    singleState.accountInfo.name = preset.data.name || '';
+                    singleState.accountInfo.pfp = preset.data.pfp || '';
+                    singleState.accountInfo.cachedPfp = preset.data.cachedPfp || preset.data.pfp || '';
+
+                    document.getElementById('accountName').value = preset.data.name || '';
+
+                    updatePreview();
+                }
+            } catch (error) {
+                console.error('Error loading preset:', error);
+            }
+        }
+
+        // Change post type
+        function changePostType() {
+            const type = document.getElementById('postType').value;
+            singleState.post.type = type;
+
+            document.getElementById('postPhotoSection').style.display = type === 'post' ? 'block' : 'none';
+            document.getElementById('reelSection').style.display = type === 'reel' ? 'block' : 'none';
+            document.getElementById('carouselSection').style.display = type === 'carousel' ? 'block' : 'none';
+
+            updatePreview();
+        }
+
+        // Update preview
+        function updatePreview() {
+            const name = singleState.accountInfo.name || document.getElementById('accountName').value || 'username';
+            const caption = document.getElementById('postCaption').value || '';
+            const date = document.getElementById('postDate').value;
+            const time = document.getElementById('postTime').value;
+
+            // Update username
+            document.getElementById('previewUsername').textContent = name;
+
+            // Update caption
+            document.getElementById('previewCaption').textContent = caption;
+
+            // Update date
+            let dateText = 'Today';
+            if (date && time) {
+                try {
+                    const d = new Date(`${date}T${time}`);
+                    if (!isNaN(d.getTime())) {
+                        dateText = d.toLocaleString('en-US', { month: 'short', day: 'numeric' });
+                    }
+                } catch (e) {
+                    dateText = 'Today';
+                }
+            }
+            document.getElementById('previewDate').textContent = dateText;
+
+            // Update profile picture
+            const pfpUrl = singleState.accountInfo.cachedPfp || singleState.accountInfo.pfp || PFP_PLACEHOLDER;
+            document.getElementById('previewPfp').src = pfpUrl;
+
+            // Update media
+            updateMediaPreview();
+        }
+
+        // Update media preview
+        function updateMediaPreview() {
+            const type = singleState.post.type;
+            const container = document.getElementById('previewMediaContainer');
+
+            if (type === 'post') {
+                const url = singleState.post.cachedPath || singleState.post.url || MEDIA_PLACEHOLDER;
+                container.innerHTML = `<img id="previewMedia" src="${url}" alt="Post" style="width: 100%; aspect-ratio: 4/5; object-fit: cover; display: block;">`;
+            } else if (type === 'reel') {
+                const url = singleState.post.cachedThumbnail || singleState.post.thumbnail || MEDIA_PLACEHOLDER;
+                container.innerHTML = `<div style="position: relative;"><img id="previewMedia" src="${url}" alt="Reel" style="width: 100%; aspect-ratio: 9/16; object-fit: cover; display: block;"><i class="fas fa-video" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 48px; color: white;"></i></div>`;
+            } else if (type === 'carousel') {
+                if (singleState.post.images.length > 0) {
+                    const slides = singleState.post.images.map((img, idx) => {
+                        const url = (singleState.post.cachedImages && singleState.post.cachedImages[idx]) || img || MEDIA_PLACEHOLDER;
+                        return `<div class="swiper-slide"><img src="${url}" alt="Carousel" style="width: 100%; aspect-ratio: 4/5; object-fit: cover; display: block;"></div>`;
+                    }).join('');
+
+                    container.innerHTML = `
+                        <div class="swiper single-carousel-swiper" style="width: 100%; aspect-ratio: 4/5;">
+                            <div class="swiper-wrapper">${slides}</div>
+                            <div class="swiper-pagination"></div>
+                        </div>
+                    `;
+
+                    setTimeout(() => {
+                        new Swiper('.single-carousel-swiper', {
+                            pagination: { el: '.swiper-pagination', clickable: true }
+                        });
+                    }, 100);
+                } else {
+                    container.innerHTML = `<img src="${MEDIA_PLACEHOLDER}" alt="Carousel" style="width: 100%; aspect-ratio: 4/5; object-fit: cover; display: block;">`;
+                }
+            }
+        }
+
+        // Upload functions
+        function uploadAccountPfp() {
+            if (!ensureDriveAuthOrAlert()) return;
+            pickFiles('image/*', false, async (files) => {
+                const file = files[0];
+                if (!file) return;
+                try {
+                    setPageLoading(true, 'Uploading profile picture...');
+                    const result = await uploadToGoogleDrive(file, 'profiles');
+                    singleState.accountInfo.pfp = result.url;
+                    singleState.accountInfo.cachedPfp = result.thumbnailUrl || result.url;
+                    document.getElementById('accountPfpStatus').textContent = 'Uploaded';
+                    document.getElementById('accountPfpStatus').classList.add('success');
+                    updatePreview();
+                    setPageLoading(false);
+                } catch (error) {
+                    console.error('Upload failed:', error);
+                    setPageLoading(false);
+                    await showAlert('Upload failed', error.message || 'Unable to upload.');
+                }
+            });
+        }
+
+        function uploadPostPhoto() {
+            if (!ensureDriveAuthOrAlert()) return;
+            pickFiles('image/*', false, async (files) => {
+                const file = files[0];
+                if (!file) return;
+                try {
+                    setPageLoading(true, 'Uploading photo...');
+                    const result = await uploadToGoogleDrive(file, 'posts');
+                    singleState.post.url = result.url;
+                    singleState.post.cachedPath = result.thumbnailUrl || result.url;
+                    document.getElementById('postPhotoStatus').textContent = 'Uploaded';
+                    document.getElementById('postPhotoStatus').classList.add('success');
+                    updatePreview();
+                    setPageLoading(false);
+                } catch (error) {
+                    console.error('Upload failed:', error);
+                    setPageLoading(false);
+                    await showAlert('Upload failed', error.message || 'Unable to upload.');
+                }
+            });
+        }
+
+        function uploadReelVideo() {
+            if (!ensureDriveAuthOrAlert()) return;
+            pickFiles('video/*', false, async (files) => {
+                const file = files[0];
+                if (!file) return;
+                try {
+                    setPageLoading(true, 'Uploading video...');
+                    const result = await uploadToGoogleDrive(file, 'reels');
+                    singleState.post.videoUrl = result.url;
+                    document.getElementById('reelVideoStatus').textContent = 'Uploaded';
+                    document.getElementById('reelVideoStatus').classList.add('success');
+                    setPageLoading(false);
+                } catch (error) {
+                    console.error('Upload failed:', error);
+                    setPageLoading(false);
+                    await showAlert('Upload failed', error.message || 'Unable to upload.');
+                }
+            });
+        }
+
+        function uploadReelThumbnail() {
+            if (!ensureDriveAuthOrAlert()) return;
+            pickFiles('image/*', false, async (files) => {
+                const file = files[0];
+                if (!file) return;
+                try {
+                    setPageLoading(true, 'Uploading thumbnail...');
+                    const result = await uploadToGoogleDrive(file, 'reels');
+                    singleState.post.thumbnail = result.url;
+                    singleState.post.cachedThumbnail = result.thumbnailUrl || result.url;
+                    document.getElementById('reelThumbnailStatus').textContent = 'Uploaded';
+                    document.getElementById('reelThumbnailStatus').classList.add('success');
+                    updatePreview();
+                    setPageLoading(false);
+                } catch (error) {
+                    console.error('Upload failed:', error);
+                    setPageLoading(false);
+                    await showAlert('Upload failed', error.message || 'Unable to upload.');
+                }
+            });
+        }
+
+        function uploadCarouselImages() {
+            if (!ensureDriveAuthOrAlert()) return;
+            pickFiles('image/*', true, async (files) => {
+                if (!files || files.length === 0) return;
+                try {
+                    setPageLoading(true, 'Uploading carousel images...');
+                    const results = await uploadMultipleFiles(files, 'carousels');
+                    singleState.post.images = results.map(r => r.url);
+                    singleState.post.cachedImages = results.map(r => r.thumbnailUrl || r.url);
+                    updateCarouselList();
+                    updatePreview();
+                    setPageLoading(false);
+                } catch (error) {
+                    console.error('Upload failed:', error);
+                    setPageLoading(false);
+                    await showAlert('Upload failed', error.message || 'Unable to upload.');
+                }
+            });
+        }
+
+        function updateCarouselList() {
+            const container = document.getElementById('carouselImagesList');
+            if (singleState.post.images.length === 0) {
+                container.innerHTML = '<p class="text-muted">No images uploaded</p>';
+            } else {
+                container.innerHTML = singleState.post.images.map((img, idx) =>
+                    `<div class="carousel-image-chip"><span>Image ${idx + 1}</span></div>`
+                ).join('');
+            }
+        }
+
+        // Publish post
+        async function publishPost() {
+            const name = document.getElementById('accountName').value;
+            if (!name) {
+                await showAlert('Validation Error', 'Please enter an account name');
+                return;
+            }
+
+            const post = {
+                id: Date.now().toString(),
+                type: singleState.post.type,
+                caption: document.getElementById('postCaption').value,
+                date: document.getElementById('postDate').value,
+                time: document.getElementById('postTime').value
+            };
+
+            if (post.type === 'post') {
+                post.url = singleState.post.url || MEDIA_PLACEHOLDER;
+                if (singleState.post.cachedPath) post.cachedPath = singleState.post.cachedPath;
+            } else if (post.type === 'reel') {
+                post.videoUrl = singleState.post.videoUrl;
+                post.thumbnail = singleState.post.thumbnail || MEDIA_PLACEHOLDER;
+                if (singleState.post.cachedThumbnail) post.cachedThumbnail = singleState.post.cachedThumbnail;
+            } else if (post.type === 'carousel') {
+                post.images = singleState.post.images.length > 0 ? singleState.post.images : [MEDIA_PLACEHOLDER];
+                if (singleState.post.cachedImages.length > 0) post.cachedImages = singleState.post.cachedImages;
+            }
+
+            const state = {
+                accountInfo: {
+                    name: name,
+                    pfp: singleState.accountInfo.pfp,
+                    cachedPfp: singleState.accountInfo.cachedPfp
+                },
+                posts: [post]
+            };
+
+            try {
+                const response = await fetch(`${API_URL}/api/feeds`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        type: 'Post',
+                        name: `${name} - Single Post - ${new Date().toLocaleString()}`,
+                        state: state
+                    })
+                });
+
+                const feed = await response.json();
+                const link = `${window.location.origin}/single-client.html?id=${feed.id}`;
+                document.getElementById('shareLink').value = link;
+                document.getElementById('shareModal').style.display = 'flex';
+            } catch (error) {
+                console.error('Error publishing post:', error);
+                await showAlert('Error', 'Failed to publish post. Make sure the server is running.');
+            }
+        }
+
+        // Share functions
+        function copyLink() {
+            const input = document.getElementById('shareLink');
+            input.select();
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(input.value).then(() => showAlert('Copied', 'Link copied to clipboard!'));
+            } else {
+                document.execCommand('copy');
+                showAlert('Copied', 'Link copied to clipboard!');
+            }
+        }
+
+        function shareWhatsApp() {
+            const link = document.getElementById('shareLink').value;
+            window.open(`https://wa.me/?text=${encodeURIComponent('Check out my Instagram post: ' + link)}`, '_blank');
+        }
+
+        function shareEmail() {
+            const link = document.getElementById('shareLink').value;
+            window.location.href = `mailto:?subject=${encodeURIComponent('Check out my Instagram post')}&body=${encodeURIComponent('I created an Instagram post mockup. Check it out here: ' + link)}`;
+        }
+
+        function closeShareModal() {
+            document.getElementById('shareModal').style.display = 'none';
+        }
+
+        function openShareLink(newTab) {
+            const link = document.getElementById('shareLink').value;
+            if (link) {
+                if (newTab) {
+                    window.open(link, '_blank');
+                } else {
+                    window.location.href = link;
+                }
+            }
+        }
+
+        // Helper functions from drive-upload.js
+        function ensureDriveAuthOrAlert() {
+            const authed = typeof isAuthenticated === 'function' && isAuthenticated();
+            if (!authed) {
+                showAlert('Connect to Drive', 'Please connect to Google Drive before uploading.');
+            }
+            return authed;
+        }
+
+        function pickFiles(accept, multiple, onPicked) {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = accept;
+            input.multiple = !!multiple;
+            input.onchange = () => {
+                const files = Array.from(input.files || []);
+                if (files.length && typeof onPicked === 'function') {
+                    onPicked(files);
+                }
+            };
+            input.click();
+        }
+
+        // Initialize on load
+        init();
+    </script>
+</body>
+
+</html>

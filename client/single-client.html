@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instagram Post - View</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
+</head>
+<body>
+    <!-- Client Container -->
+    <div style="max-width: 600px; margin: 0 auto; min-height: 100vh; background: var(--bg-primary); padding: 20px 0;">
+        <div id="singlePostView">
+            <!-- Post will be rendered here -->
+        </div>
+        
+        <!-- Send Feedback Button -->
+        <button class="send-feedback-btn" id="sendFeedbackBtn" onclick="openReviewPanel()" style="display: none;">
+            <i class="fas fa-paper-plane"></i> Send Feedback
+        </button>
+    </div>
+
+    <!-- Email Capture Modal -->
+    <div id="emailModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h3>Welcome!</h3>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 16px;">Please enter your email to view and provide feedback on this post:</p>
+                <input type="email" id="clientEmailInput" placeholder="your@email.com" 
+                    style="width: 100%; padding: 12px; background-color: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-md); color: var(--text-primary); font-family: var(--font-family); margin-bottom: 8px;">
+                <p id="emailError" style="color: #ff4444; font-size: 12px; display: none; margin-top: 4px;"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-primary" onclick="submitEmail()" style="width: 100%;">Continue</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Review Panel Modal -->
+    <div id="reviewPanel" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 600px; max-height: 80vh; overflow-y: auto;">
+            <div class="modal-header">
+                <h3>Review Your Feedback</h3>
+                <button class="btn-icon" onclick="closeReviewPanel()" style="position: absolute; right: 16px; top: 16px;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="reviewPanelContent">
+                <!-- Review content will be rendered here -->
+            </div>
+            <div class="modal-footer" style="display: flex; gap: 12px;">
+                <button class="btn-secondary" onclick="closeReviewPanel()" style="flex: 1;">Back</button>
+                <button class="btn-primary" onclick="submitApproval()" style="flex: 1;">
+                    <i class="fas fa-paper-plane"></i> Send Feedback
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Post Comment Modal -->
+    <div id="commentModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3>Add Comment</h3>
+                <button class="btn-icon" onclick="closeCommentModal()" style="position: absolute; right: 16px; top: 16px;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <textarea id="commentInput" placeholder="Enter your feedback..." 
+                    style="width: 100%; min-height: 100px; padding: 12px; background-color: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-md); color: var(--text-primary); font-family: var(--font-family); resize: vertical;"></textarea>
+                <div id="existingComments" style="margin-top: 16px;">
+                    <!-- Existing comments will be rendered here -->
+                </div>
+            </div>
+            <div class="modal-footer" style="display: flex; gap: 12px;">
+                <button class="btn-secondary" onclick="closeCommentModal()" style="flex: 1;">Cancel</button>
+                <button class="btn-primary" onclick="addComment()" style="flex: 1;">Add Comment</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="successModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 400px; text-align: center;">
+            <div class="modal-body" style="padding: 40px 20px;">
+                <div style="font-size: 64px; color: #4CAF50; margin-bottom: 20px;">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <h3 style="margin-bottom: 12px;">Feedback Sent!</h3>
+                <p style="color: var(--text-secondary);">Thank you for your feedback. The content creator will review your comments shortly.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-primary" onclick="closeSuccessModal()" style="width: 100%;">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+    <script>
+        // Cache functions needed for single-client view
+        async function downloadAndCacheThumbnail(googleDriveUrl, type, id, index) {
+            try {
+                const response = await fetch('http://localhost:3001/api/cache/download', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: googleDriveUrl, type, id, index })
+                });
+                const data = await response.json();
+                return data.localPath || googleDriveUrl;
+            } catch (error) {
+                console.error('❌ Cache Error:', error);
+                return googleDriveUrl;
+            }
+        }
+
+        function deleteCacheOnPostRemoval(post) {
+            if (!post || !post.id) return;
+            fetch('http://localhost:3001/api/cache/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ postId: post.id, type: post.type })
+            }).catch(err => console.error('Cache cleanup error:', err));
+        }
+    </script>
+    <script src="single-client.js"></script>
+</body>
+</html>
