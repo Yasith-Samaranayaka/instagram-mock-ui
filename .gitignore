@@ -1,5 +1,19 @@
+# Node
 node_modules/
-server/node_modules/
+npm-debug.log
+
+# Environment
 .env
+.env.local
+
+# OS / Editor
 .DS_Store
-*.log
+Thumbs.db
+
+# Local cache / generated data
+CacheContent/
+CachedImages/
+Data/
+
+# Scripts
+run server(delete this before rollout).ps1
